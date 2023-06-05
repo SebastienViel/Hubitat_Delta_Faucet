@@ -2,7 +2,7 @@ import groovy.json.JsonSlurper
 import groovy.transform.Field
 
 metadata {
-    definition(name: "Delta Faucet Driver with Token Prompt", namespace: "your.namespace", author: "Author Name") {
+    definition(name: "Delta Faucet Driver with Token Prompt", namespace: "SebastienViel", author: "Sébastien Viel") {
         capability "Switch"
     }
 }
