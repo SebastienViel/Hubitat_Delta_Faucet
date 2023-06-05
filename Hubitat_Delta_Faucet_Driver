@@ -20,11 +20,11 @@ preferences {
 }
 
 def installed() {
-    log.debug "Installed"
+    if (logEnable){log.debug "Installed"}
 }
 
 def updated() {
-    log.debug "Updated"
+    if (logEnable){log.debug "Updated"}
 }
 
 def on() {
@@ -67,16 +67,16 @@ private toggleWater(String toggle)
             response = resp
         }
  
-        log.debug response.status
-        log.debug response.data
+        if (logEnable){log.debug response.status}
+        if (logEnable){log.debug response.data}
 
         if(response?.status?.toInteger() == 200)
         {
-            log.debug "Toggle water ${toggle} successful"
+            if (logEnable){log.debug "Toggle water ${toggle} successful"}
         }
         else
         {
-           log.error "Toggle water ${toggle} failed: ${response.status}"
+            if (logEnable){log.error "Toggle water ${toggle} failed: ${response.status}"}
         }
     }
     catch (Exception e)
