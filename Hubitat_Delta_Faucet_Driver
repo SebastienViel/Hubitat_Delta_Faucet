@@ -5,7 +5,7 @@ metadata {
     definition(
         name: "Delta Faucet Driver with Token Prompt",
         namespace: "SebastienViel",
-        author: "Sébastien Viel and TomW"
+        author: "Sébastien Viel and TomW",
         importUrl: "https://raw.githubusercontent.com/SebastienViel/Hubitat_Delta_Faucet/main/Hubitat_Delta_Faucet_Driver") {
 
         capability "Switch"
