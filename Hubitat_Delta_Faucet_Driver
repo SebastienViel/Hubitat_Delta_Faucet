@@ -60,11 +60,9 @@ def updated() { log.debug "updated" }
 
 def on() {
     toggleWater("on")
-    sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
-}
+    }
 def off() {
     toggleWater("off")
-    sendEvent(name: "switch", value: "off", descriptionText: "${device.displayName} is off")
 }
 
 def knownTimePeriods()
@@ -115,7 +113,7 @@ private toggleWater(String toggle)
         
         if(response?.status?.toInteger() == 200)
         {
-            sendEvent(name: "switch", value: toggle)
+            sendEvent(name: "switch", value: toggle, descriptionText: "${device.displayName} is ${toggle}")
             if (logEnable) { log.debug "Toggle water ${toggle} successful" }
         }
         else { log.error "Toggle water ${toggle} failed: ${response.status}" }
