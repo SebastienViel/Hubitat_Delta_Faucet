@@ -23,46 +23,60 @@ Change history:
 
 1.0 - SebastienViel - Initial release.
 1.1 - SebastienViel - Removed "Driver" from the driver name.
+1.2 - TomW - Added option to dispence a specific quantity and a query for information (logged for now) and other fixes.
 
 */
-
 import groovy.json.JsonSlurper
 import groovy.transform.Field
 
-metadata {
-    definition(
-        name: "Delta Faucet",
-        namespace: "SebastienViel",
-        author: "Sébastien Viel and TomW",
-        importUrl: "https://raw.githubusercontent.com/SebastienViel/Hubitat_Delta_Faucet/main/Hubitat_Delta_Faucet_Driver") {
-
+metadata
+{
+    definition(name: "Delta Faucet Driver with Token Prompt", namespace: "your.namespace", author: "Author Name")
+    {
         capability "Switch"
         
         command "saveToken", ["token"]
+        
+        command "dispense_mL", ["mL_toDispense"]
+        command "queryUsageReport", ["interval"]
     }
 }
 
-preferences {
-    input("delta_device_id", "text", title: "Delta Device ID", description: "Enter Delta Device ID", defaultValue: "", required: true, displayDuringSetup: true)
+preferences
+{
+    input("delta_device_id", "text", title: "Delta Device ID", description: "Enter Delta Device ID", defaultValue: "")
     input(name: "logEnable", type: "bool", title: "Enable debug logging", defaultValue: true)
 }
 
-def installed() {
-    if (logEnable){log.debug "Installed"}
-}
+def installed() { log.debug "installed" }
 
-def updated() {
-    if (logEnable){log.debug "Updated"}
-}
+def updated() { log.debug "updated" }
 
-def on() {
+def on()
+{
     toggleWater("on")
-    sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
 }
 
-def off() {
+def off()
+{
     toggleWater("off")
-    sendEvent(name: "switch", value: "off", descriptionText: "${device.displayName} is off")
+}
+
+def queryUsageReport(interval = 0)
+{
+    def deviceId = delta_device_id
+    
+    try
+    {
+        def response = httpExec("GET", "UsageReport?deviceId=${deviceId}&interval=${interval}")
+        
+        if(response?.status?.toInteger() == 200) { log.info "Usage Report = ${response.data}" }
+        else { log.error "Usage Report ${interval} failed: ${response.status}" }
+    }
+    catch(Exception e)
+    {
+        log.error "Error Usage Report: ${e.message}"
+    }
 }
 
 def saveToken(token)
@@ -78,37 +92,74 @@ def currentToken()
 private toggleWater(String toggle)
 {
     def deviceId = delta_device_id
-    def deltaToken = "Bearer ${currentToken()}"
-    def apiUrl = "https://device.legacy.deltafaucet.com/api/device/toggleWater?deviceId=${deviceId}&toggle=${toggle}"
-    def headers = [
-        'Authorization': deltaToken, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-        'Referer': 'https://device.legacy.deltafaucet.com/'
-    ]
     
     try
     {
-        def response
-        httpPost(uri: apiUrl, headers: headers)
-        
-        {
-            resp ->
-            response = resp
-        }
- 
+        def response = httpExec("POST", "toggleWater?deviceId=${deviceId}&toggle=${toggle}")
+
         if (logEnable){log.debug response.status}
         if (logEnable){log.debug response.data}
-
-        if(response?.status?.toInteger() == 200)
-        {
-            if (logEnable){log.debug "Toggle water ${toggle} successful"}
-        }
-        else
-        {
-            if (logEnable){log.error "Toggle water ${toggle} failed: ${response.status}"}
-        }
+        
+        if(response?.status?.toInteger() == 200) { log.debug "Toggle water ${toggle} successful" }
+        else { log.error "Toggle water ${toggle} failed: ${response.status}" }
     }
-    catch (Exception e)
-        {
-            log.error "Error toggling water: ${e.message}"
-        }
+    catch(Exception e)
+    {
+        log.error "Error toggling water: ${e.message}"
+    }
+}
+
+private dispense_mL(mL_toDispense)
+{
+    def deviceId = delta_device_id
+    
+    try
+    {
+        def response = httpExec("POST", "dispense?deviceId=${deviceId}&milliliters=${mL_toDispense}")
+
+            if (logEnable){log.debug response.status}
+            if (logEnable){log.debug response.data}
+        
+        if(response?.status?.toInteger() == 200){
+            if (logEnabled){ log.debug "Dispense mL ${mL_toDispense} successful" }}
+        else { log.error "Dispense mL failed: ${response.status}" }
+    }
+    catch(Exception e)
+    {
+        log.error "Error dispensing water: ${e.message}"
+    }
+}
+
+def httpExec(operation, String path)
+{
+    def result = null
+    
+    def httpClosure = 
+    { resp ->
+        result = resp
+    }
+    
+    def httpOp
+    
+    switch(operation)
+    {
+        case "POST":
+            httpOp = this.delegate.&httpPost
+            break
+        case "GET":
+            httpOp = this.delegate.&httpGet
+            break
+    }
+    
+    def deltaToken = "Bearer ${currentToken()}"
+    def apiUrl = "https://device.legacy.deltafaucet.com/api/device/" + path
+    def headers =
+        [
+            'Authorization': deltaToken, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+            'Referer': 'https://device.legacy.deltafaucet.com/'
+        ]
+    
+    httpOp(uri: apiUrl, headers: headers, httpClosure)
+    
+    return result
 }
