@@ -1,0 +1,62 @@
+import groovy.json.JsonSlurper
+import groovy.transform.Field
+
+metadata {
+    definition(name: "Delta Faucet Driver with Token Prompt", namespace: "your.namespace", author: "Author Name") {
+        capability "Switch"
+    }
+}
+
+preferences {
+    input("delta_device_id", "text", title: "Delta Device ID", description: "Enter Delta Device ID", defaultValue: "", required: true, displayDuringSetup: true)
+    input("delta_token", "text", title: "Delta Token", description: "Enter Delta Token", defaultValue: "", required: false, displayDuringSetup: true)
+}
+
+def installed() {
+    log.debug "Installed"
+}
+
+def updated() {
+    log.debug "Updated"
+}
+
+def on() {
+    toggleWater("on")
+}
+
+def off() {
+    toggleWater("off")
+}
+
+private toggleWater(String toggle) {
+    def deviceId = delta_device_id
+    def deltaToken = "Bearer ${delta_token}"
+    def apiUrl = "https://device.legacy.deltafaucet.com/api/device/toggleWater?deviceId=${deviceId}&toggle=${toggle}"
+    def headers = [
+        'Authorization': deltaToken, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+        'Referer': 'https://device.legacy.deltafaucet.com/'
+    ]
+    
+    try {
+        def response
+        httpPost(uri: apiUrl, headers: headers)
+        
+        {
+        resp ->
+        response = resp
+        }
+        
+        if (response.status == 200) {
+            def parsedResponse = new JsonSlurper().parseText(response.data)
+            if (parsedResponse.success) {
+                log.debug "Toggle water ${toggle} successful"
+            } else {
+                log.error "Toggle water ${toggle} failed: ${parsedResponse.error}"
+            }
+        } else {
+            log.error "Toggle water ${toggle} failed: ${response.status}"
+        }
+    } catch (Exception e) {
+        log.error "Error toggling water: ${e.message}"
+    }
+}
