@@ -2,14 +2,15 @@ import groovy.json.JsonSlurper
 import groovy.transform.Field
 
 metadata {
-    definition(name: "Delta Faucet Driver with Token Prompt", namespace: "your.namespace", author: "Author Name") {
+    definition(name: "Delta Faucet Driver with Token Prompt", namespace: "SebastienViel", author: "Sébastien Viel and TomW") {
         capability "Switch"
+        
+        command "saveToken", ["token"]
     }
 }
 
 preferences {
-    input("delta_device_id", "text", title: "Delta Device ID", description: "Enter Delta Device ID", defaultValue: "", required: true, displayDuringSetup: true)
-    input("delta_token", "text", title: "Delta Token", description: "Enter Delta Token", defaultValue: "", required: false, displayDuringSetup: true)
+    input("delta_device_id", "text", title: "Delta Device ID", description: "Enter Delta Device ID", defaultValue: "")
 }
 
 def installed() {
@@ -28,9 +29,19 @@ def off() {
     toggleWater("off")
 }
 
+def saveToken(token)
+{
+    device.updateDataValue("token", token)
+}
+
+def currentToken()
+{
+    return device.getDataValue("token")
+}
+
 private toggleWater(String toggle) {
     def deviceId = delta_device_id
-    def deltaToken = "Bearer ${delta_token}"
+    def deltaToken = "Bearer ${currentToken()}"
     def apiUrl = "https://device.legacy.deltafaucet.com/api/device/toggleWater?deviceId=${deviceId}&toggle=${toggle}"
     def headers = [
         'Authorization': deltaToken, 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
