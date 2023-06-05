@@ -24,6 +24,7 @@ Change history:
 1.0 - SebastienViel - Initial release.
 1.1 - SebastienViel - Removed "Driver" from the driver name.
 1.2 - TomW - Added option to dispence a specific quantity and a query for information (logged for now) and other fixes.
+1.3 - SebastienViel - Added sending events with on/off/dispense
 
 */
 import groovy.json.JsonSlurper
@@ -52,14 +53,13 @@ def installed() { log.debug "installed" }
 
 def updated() { log.debug "updated" }
 
-def on()
-{
+def on() {
     toggleWater("on")
+    sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
 }
-
-def off()
-{
+def off() {
     toggleWater("off")
+    sendEvent(name: "switch", value: "off", descriptionText: "${device.displayName} is off")
 }
 
 def queryUsageReport(interval = 0)
@@ -113,6 +113,7 @@ private dispense_mL(mL_toDispense)
 {
     def deviceId = delta_device_id
     
+    sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
     try
     {
         def response = httpExec("POST", "dispense?deviceId=${deviceId}&milliliters=${mL_toDispense}")
@@ -128,6 +129,7 @@ private dispense_mL(mL_toDispense)
     {
         log.error "Error dispensing water: ${e.message}"
     }
+    sendEvent(name: "switch", value: "off", descriptionText: "${device.displayName} is off")
 }
 
 def httpExec(operation, String path)
