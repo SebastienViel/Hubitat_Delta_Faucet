@@ -25,6 +25,7 @@ Change history:
 1.1 - SebastienViel - Removed "Driver" from the driver name.
 1.2 - TomW - Added option to dispence a specific quantity and a query for information (logged for now) and other fixes.
 1.3 - SebastienViel - Added sending events with on/off/dispense and fixed logging and definitions
+1.4 - TomW & SebastienViel - Various updates and fixes
 
 */
 import groovy.json.JsonSlurper
@@ -33,7 +34,7 @@ import groovy.transform.Field
 metadata
 {
     definition(
-        name: "Delta Faucet",
+        name: "Delta VoiceIQ Faucet",
         namespace: "SebastienViel",
         author: "Sébastien Viel and TomW",
         importUrl: "https://raw.githubusercontent.com/SebastienViel/Hubitat_Delta_Faucet/main/Hubitat_Delta_Faucet_Driver"
@@ -43,7 +44,7 @@ metadata
         
         command "saveToken", ["token"]
         command "dispense_mL", ["mL_toDispense"]
-        command "queryUsageReport", ["interval"]
+        command "queryUsageReport", [[name: "Time interval", type:"ENUM", constraints: knownTimePeriods().keySet()]]
      }
 }
 
@@ -66,15 +67,25 @@ def off() {
     sendEvent(name: "switch", value: "off", descriptionText: "${device.displayName} is off")
 }
 
-def queryUsageReport(interval = 0)
+def knownTimePeriods()
 {
-    def deviceId = delta_device_id
+    def periods = [ daily: 0, weekly: 1, monthly: 2, yearly: 3 ]
+    
+    return periods
+}
+
+def queryUsageReport(interval)
+{
+    interval = knownTimePeriods()?.getAt(interval)
     
     try
     {
-        def response = httpExec("GET", "UsageReport?deviceId=${deviceId}&interval=${interval}")
+        def response = httpExec("GET", "UsageReport?deviceId=${delta_device_id}&interval=${interval}")
         
-        if(response?.status?.toInteger() == 200) { log.info "Usage Report = ${response.data}" }
+        if(response?.status?.toInteger() == 200)
+        {
+            log.info "Usage Report = ${response.data}"
+        }
         else { log.error "Usage Report ${interval} failed: ${response.status}" }
     }
     catch(Exception e)
@@ -94,17 +105,19 @@ def currentToken()
 }
 
 private toggleWater(String toggle)
-{
-    def deviceId = delta_device_id
-    
+{    
     try
     {
-        def response = httpExec("POST", "toggleWater?deviceId=${deviceId}&toggle=${toggle}")
+        def response = httpExec("POST", "toggleWater?deviceId=${delta_device_id}&toggle=${toggle}")
 
         if (logEnable){log.debug response.status}
         if (logEnable){log.debug response.data}
         
-        if(response?.status?.toInteger() == 200) { if (logEnable){log.debug "Toggle water ${toggle} successful" }}
+        if(response?.status?.toInteger() == 200)
+        {
+            sendEvent(name: "switch", value: toggle)
+            if (logEnable) { log.debug "Toggle water ${toggle} successful" }
+        }
         else { log.error "Toggle water ${toggle} failed: ${response.status}" }
     }
     catch(Exception e)
@@ -114,19 +127,19 @@ private toggleWater(String toggle)
 }
 
 private dispense_mL(mL_toDispense)
-{
-    def deviceId = delta_device_id
-    
-    sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
+{   
     try
     {
-        def response = httpExec("POST", "dispense?deviceId=${deviceId}&milliliters=${mL_toDispense}")
+        def response = httpExec("POST", "dispense?deviceId=${delta_device_id}&milliliters=${mL_toDispense}")
 
             if (logEnable){log.debug response.status}
             if (logEnable){log.debug response.data}
         
-        if(response?.status?.toInteger() == 200){
-            if (logEnabled){ log.debug "Dispense mL ${mL_toDispense} successful" }}
+        if(response?.status?.toInteger() == 200)
+        {
+            if (logEnabled){ log.debug "Dispense mL ${mL_toDispense} successful" }
+            sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
+        }
         else { log.error "Dispense mL failed: ${response.status}" }
     }
     catch(Exception e)
