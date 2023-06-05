@@ -25,7 +25,6 @@ Change history:
 1.1 - SebastienViel - Removed "Driver" from the driver name.
 1.2 - TomW - Added option to dispence a specific quantity and a query for information (logged for now) and other fixes.
 1.3 - SebastienViel - Added sending events with on/off/dispense and fixed logging and definitions
-1.4 - TomW & SebastienViel - Various updates and fixes
 
 */
 import groovy.json.JsonSlurper
@@ -44,7 +43,9 @@ metadata
         
         command "saveToken", ["token"]
         command "dispense_mL", ["mL_toDispense"]
-        command "queryUsageReport", [[name: "Time interval", type:"ENUM", constraints: knownTimePeriods().keySet()]]
+        command "queryUsageReport", [[name: "Time interval", title: "Query Usage Report", type:"ENUM", constraints: knownTimePeriods().keySet()]]
+        //command "queryUsageReport", [[name: "Time interval", type:"ENUM", title: "Query Usage Report", options: [0:"daily",1:"weekly",2:"monthly",3:"yearly"]]]
+        
      }
 }
 
@@ -60,7 +61,7 @@ def updated() { log.debug "updated" }
 
 def on() {
     toggleWater("on")
-    }
+}
 def off() {
     toggleWater("off")
 }
