@@ -25,6 +25,8 @@ Change history:
 1.1 - SebastienViel - Removed "Driver" from the driver name.
 1.2 - TomW - Added option to dispence a specific quantity and a query for information (logged for now) and other fixes.
 1.3 - SebastienViel - Added sending events with on/off/dispense and fixed logging and definitions
+1.4 - TomW & SebastienViel - Multiple updates
+1.5 - SebastienViel - Updated some of the labels
 
 */
 import groovy.json.JsonSlurper
