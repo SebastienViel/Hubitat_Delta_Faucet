@@ -30,9 +30,10 @@ Change history:
 1.6 - SebastienViel - Added a delay to the off command when dispensing a specific quantity
 1.7 - TomW - Updated the delay code to a better approach that would prevent potential issues
 1.7 - SebastienViel - Updated Debug Logging
+1.8 - TomW - Added a way to display usage data
 */
-import groovy.json.JsonSlurper
-import groovy.transform.Field
+//import groovy.json.JsonSlurper
+//import groovy.transform.Field
 
 metadata
 {
@@ -43,7 +44,13 @@ metadata
         importUrl: "https://raw.githubusercontent.com/SebastienViel/Hubitat_Delta_Faucet/main/Hubitat_Delta_Faucet_Driver"
         )
     {
+        capability "Refresh"
         capability "Switch"
+        
+        attribute "usageLastDay", "number"
+        attribute "usageLastWeek", "number"
+        attribute "usageLastMonth", "number"
+        attribute "usageLastYear", "number"
         
         command "saveToken", ["Token"]
         command "dispense_mL", ["Milileters to dispense"]
@@ -77,9 +84,19 @@ def off()
     toggleWater("off")
 }
 
+def refresh()
+{
+    def resp
+    knownTimePeriods().each
+    {
+        resp = queryUsageReport(it.key)
+        sendEvent(name: it.key, value: resp?.getAt(resp.size() - 1))
+    }
+}
+
 def knownTimePeriods()
 {
-    def periods = [ daily: 0, weekly: 1, monthly: 2, yearly: 3 ]
+    def periods = [ usageLastDay: 0, usageLastWeek: 1, usageLastMonth: 2, usageLastYear: 3 ]
     
     return periods
 }
@@ -87,14 +104,15 @@ def knownTimePeriods()
 def queryUsageReport(interval)
 {
     interval = knownTimePeriods()?.getAt(interval)
-    
+     
     try
     {
+        if(logEnable){log.debug "Getting Usage Report for ${interval} interval."}
         def response = httpExec("GET", "UsageReport?deviceId=${delta_device_id}&interval=${interval}")
-        
         if(response?.status?.toInteger() == 200)
         {
             log.info "Usage Report = ${response.data}"
+            return response.data?.retObject?.datasets?.getAt(0)?.data
         }
         else
         {
