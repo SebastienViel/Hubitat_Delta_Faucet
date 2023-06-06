@@ -31,6 +31,7 @@ Change history:
 1.7 - TomW - Updated the delay code to a better approach that would prevent potential issues
 1.7 - SebastienViel - Updated Debug Logging
 1.8 - TomW - Added a way to display usage data
+1.9 - SebastienViel - Fixed Logging when it shouldn't
 */
 //import groovy.json.JsonSlurper
 //import groovy.transform.Field
@@ -111,7 +112,7 @@ def queryUsageReport(interval)
         def response = httpExec("GET", "UsageReport?deviceId=${delta_device_id}&interval=${interval}")
         if(response?.status?.toInteger() == 200)
         {
-            log.info "Usage Report = ${response.data}"
+            if (logEnale){log.info "Usage Report = ${response.data}"}
             return response.data?.retObject?.datasets?.getAt(0)?.data
         }
         else
@@ -177,7 +178,7 @@ private dispense_mL(mL_toDispense)
         
         if(response?.status?.toInteger() == 200)
         {
-            if (logEnabled){ log.debug "Dispense mL ${mL_toDispense} successful" }
+            if (logEnable){ log.debug "Dispense mL ${mL_toDispense} successful" }
             //sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
             if (logEnable){ log.debug "mL_toDispense is set to ${mL_toDispense}"}
             
