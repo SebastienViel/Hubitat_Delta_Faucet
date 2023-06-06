@@ -28,6 +28,8 @@ Change history:
 1.4 - TomW & SebastienViel - Multiple updates
 1.5 - SebastienViel - Updated some of the labels and did a bit of OCD code clean-up...
 1.6 - SebastienViel - Added a delay to the off command when dispensing a specific quantity
+1.7 - TomW - Updated the delay code to a better approach that would prevent potential issues
+1.7 - SebastienViel - Updated Debug Logging
 */
 import groovy.json.JsonSlurper
 import groovy.transform.Field
@@ -119,14 +121,17 @@ private toggleWater(String toggle)
 {    
     try
     {
+        if (logEnable){log.debug "Preparing the ${toggle} command to send to Delta."}
+        
         def response = httpExec("POST", "toggleWater?deviceId=${delta_device_id}&toggle=${toggle}")
 
-        if (logEnable){log.debug response.status}
-        if (logEnable){log.debug response.data}
+        if (logEnable){log.debug "Response Status (from toggleWater): ${response.status}"}
+        if (logEnable){log.debug "Response Data (from toggleWater): ${response.data}"}
         
         if(response?.status?.toInteger() == 200)
         {
-            sendEvent(name: "switch", value: toggle, descriptionText: "${device.displayName} is ${toggle}")
+            sendSwitchState(toggle)
+//            sendEvent(name: "switch", value: toggle, descriptionText: "${device.displayName} is ${toggle}")
             if (logEnable){log.debug "Toggle water ${toggle} successful"}
         }
         else
@@ -144,15 +149,34 @@ private dispense_mL(mL_toDispense)
 {   
     try
     {
+
+        if (logEnable){log.debug "Preparing the ${mL_toDispense} mL to dispense command to send to Delta."}
+
         def response = httpExec("POST", "dispense?deviceId=${delta_device_id}&milliliters=${mL_toDispense}")
 
-            if (logEnable){log.debug response.status}
-            if (logEnable){log.debug response.data}
+        if (logEnable){log.debug "Response Status (from dispense_mL): ${response.status}"}
+        if (logEnable){log.debug "Response Data (from dispense_mL): ${response.data}"}
         
         if(response?.status?.toInteger() == 200)
         {
             if (logEnabled){ log.debug "Dispense mL ${mL_toDispense} successful" }
-            sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
+            //sendEvent(name: "switch", value: "on", descriptionText: "${device.displayName} is on")
+            if (logEnable){ log.debug "mL_toDispense is set to ${mL_toDispense}"}
+            
+            def pauseDuration = 10
+            
+            pauseDuration = mL_toDispense.toInteger() / 70
+            if (logEnable){ log.debug "Pause duration is set to ${pauseDuration}"}
+            
+            if(pauseDuration.toInteger() > 300)
+            {
+                pauseDuration = 300                
+                if (logEnable){ log.debug "Pause duration was changed to ${pauseDuration}"}
+            }
+
+            pauseDuration = pauseDuration.intValue()
+            
+            sendSwitchState("on", pauseDuration)
         }
         else
         {
@@ -163,16 +187,23 @@ private dispense_mL(mL_toDispense)
     {
         log.error "Error dispensing water: ${e.message}"
     }
-    def pauseDuration = 10
-    pauseDuration = mL_toDispense.toInteger() * 10
-    if(pauseDuration > 60000)
+}
+
+def sendSwitchState(value, timeout = null)
+{
+    unschedule(sendSwitchState)
+    
+    // set presence to incoming state
+    sendEvent(name: "switch", value: value, descriptionText: "${device.displayName} is off")
+
+    if (logEnable) {log.debug "Timeout delay is set to ${timeout} seconds."}
+    if(null != timeout)
     {
-        pauseDuration = 60000
+        // if timeout reached, assume "off" is indicated state
+        if (logEnable) {log.debug "Set sendSwitchState to run in ${timeout} seconds."}
+        runIn(timeout, sendSwitchState, [data: "off"])
     }
-    //log.debug mL_toDispense
-    //log.debug pauseDuration
-    pauseExecution(pauseDuration)
-    sendEvent(name: "switch", value: "off", descriptionText: "${device.displayName} is off")
+    if (logEnable) {log.debug "Switch Sate updated to ${value}."}    
 }
 
 def httpExec(operation, String path)
@@ -204,6 +235,8 @@ def httpExec(operation, String path)
             'Referer': 'https://device.legacy.deltafaucet.com/'
         ]
     
+    if (logEnable){log.debug "Sending the ${operation} for the command to be executed."}
+
     httpOp(uri: apiUrl, headers: headers, httpClosure)
     
     return result
