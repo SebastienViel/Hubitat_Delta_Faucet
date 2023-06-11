@@ -33,6 +33,7 @@ Change history:
 1.8 - TomW - Added a way to display usage data
 1.9 - SebastienViel - Fixed Logging when it shouldn't
 1.10 - TomW - Update Usage Refresh code to show previous day for daily value since current day is always 0
+1.11 - SebastienViel - Updated Usage Refresh code to show previous day when the value received was 0
 */
 //import groovy.json.JsonSlurper
 //import groovy.transform.Field
@@ -94,8 +95,16 @@ def refresh()
         resp = queryUsageReport(it.key)
         
         // daily usage is zero for current day, so go to previous day only for that case
-        def dataOffset = (it.key == "usageLastDay") ? 2 : 1
+        //def dataOffset = (it.key == "usageLastDay") ? 2 : 1
+        def dataOffset = 1
         def value = resp?.getAt(resp.size() - dataOffset)
+        
+        if(logEnable){log.debug "${it.key} key value is ${value} for response ${resp.size()} less a ${dataOffset} offset"}
+        if(value == 0)
+        {
+            value = resp?.getAt(resp.size() - (dataOffset + 1))
+            if(logEnable){log.debug "Retrying since value was 0 - ${it.key} key value is ${value} for response ${resp.size()} less a ${dataOffset + 1} offset"}
+        }
         
         sendEvent(name: it.key, value: value)
     }
