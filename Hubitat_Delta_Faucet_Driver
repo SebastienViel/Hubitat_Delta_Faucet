@@ -53,16 +53,11 @@ metadata
         
         command "saveToken", ["Token"]
         command "dispense_fl_oz", [[name: "Fluid Ounces", title: "Dispense fl oz", type: "NUMBER", description: "Input number of fluid ounces to dispense (integers only)"]] //30 mL
-		
 		command "dispense_c", [[name: "Cups", title: "Dispense cups", type: "NUMBER", description: "Input number of cups to dispense (integers only)"]] //237 mL
 		command "dispense_pt", [[name: "Pints", title: "Dispense pints", type: "NUMBER", description: "Input number of pints to dispense (integers only)"]] //473 mL
-		
 		command "dispense_qt", [[name: "Quarts", title: "Dispense quarts", type: "NUMBER", description: "Input number of quarts to dispense (integers only)"]] //946 mL
-		
 		command "dispense_gal", [[name: "Gallons", title: "Dispense gallons", type: "NUMBER", description: "Input number of gallons to dispense (integers only)"]] //3785 mL
-        
         command "dispense_mL", [[name: "Milliliters", title: "Dispense mL", type: "NUMBER", description: "Input number of milliliters to dispense (integers only)"]]
-		
 		command "dispense_cL", [[name: "Centiliters", title: "Dispense cL", type: "NUMBER", description: "Input number of centiliters to dispense (integers only)"]] //10 mL
 		command "dispense_dL", [[name: "Deciliters", title: "Dispense dL", type: "NUMBER", description: "Input number of deciliters to dispense (integers only)"]] //100 mL
 		command "dispense_L", [[name: "Liters", title: "Dispense L", type: "NUMBER", description: "Input number of liters to dispense (integers only)"]] //1000 mL        
