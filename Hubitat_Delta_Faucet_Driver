@@ -26,11 +26,9 @@ Change history:
 1.9 - SebastienViel - Fixed Logging when it shouldn't
 1.10 - TomW - Update Usage Refresh code to show previous day for daily value since current day is always 0
 1.11 - SebastienViel - Updated Usage Refresh code to show previous day when the value received was 0
-<<<<<<< HEAD
-=======
 1.12 - green.aarond - Updated with non-legacy deltafaucet device URL
 1.13 - green.aarond - Added dispense options for other units (cL, dL, L, fl oz, c, pt, qt, gal) + 'custom' options to fill a glass or a coffee pot
->>>>>>> 3571e71 (Update Hubitat_Delta_Faucet_Driver)
+
 */
 //import groovy.json.JsonSlurper
 //import groovy.transform.Field
